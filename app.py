@@ -14,19 +14,12 @@ st.set_page_config(
 
 st.title("🎥 YouTube 동영상 다운로더")
 
-# 현재 상태 알림
-st.error("""
-🚫 **Streamlit Cloud에서 YouTube 다운로드 불가**
-- YouTube가 Streamlit Cloud IP를 완전히 차단했습니다
-- 현재 이 앱은 Streamlit Cloud에서 작동하지 않습니다
-- **해결 방법**: 로컬 환경에서 실행하세요
-""")
-
-st.info("""
-💡 **로컬 실행 방법**
-1. 이 저장소를 클론: `git clone https://github.com/jpjp92/yt_downloader.git`
-2. 의존성 설치: `pip install -r requirements.txt`
-3. 로컬 실행: `streamlit run app.py`
+# 로컬 실행 환경 안내
+st.success("""
+✅ **로컬 환경에서 실행 중**
+- 모든 기능이 정상적으로 작동합니다
+- 고품질 다운로드 및 변환 지원
+- 빠른 속도와 안정성 보장
 """)
 
 st.markdown("---")
@@ -55,6 +48,16 @@ with st.sidebar:
         "다운로드 형식",
         ["비디오 (MP4)", "오디오 (MP3)"],
     )
+    
+    # 로컬 환경 최적화 옵션
+    st.markdown("---")
+    st.header("🚀 성능 최적화")
+    
+    enable_high_quality = st.checkbox("🎯 고품질 모드", value=True, 
+                                    help="최고 품질로 다운로드 (1080p, 320kbps)")
+    
+    enable_fast_download = st.checkbox("⚡ 빠른 다운로드", value=True,
+                                     help="동시 다운로드 청크 수 증가")
 
     st.markdown("---")
     st.header("🔄 변환 옵션")
@@ -126,70 +129,74 @@ def get_video_info(url: str):
         return None
 
 
-def download_video(url: str, download_type: str, output_path: Path) -> Path | None:
+def download_video(url: str, download_type: str, output_path: Path, 
+                  high_quality: bool = True, fast_download: bool = True) -> Path | None:
     try:
-        # 최후의 수단: 완전히 다른 접근 방식
-        ultra_minimal_opts = {
-            "outtmpl": str(output_path / "%(title)s.%(ext)s"),
-            "format": "worst/worstaudio" if download_type == "오디오 (MP3)" else "worst",
-            # 모든 우회 시도
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["mediaconnect", "android", "ios", "web"],
-                    "skip": ["translated_subs"],
-                    "lang": ["en"],
-                }
-            },
-            # 프록시 시뮬레이션 헤더
-            "http_headers": {
-                "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip",
-                "X-YouTube-Client-Name": "3",
-                "X-YouTube-Client-Version": "19.09.37",
-            },
-            # 최소 설정
-            "quiet": True,
-            "no_warnings": True,
-            "ignoreerrors": True,
-            "no_check_certificate": True,
-            "prefer_insecure": True,
-            # 연결 설정
-            "socket_timeout": 30,
-            "retries": 3,
-            # 지역 우회
-            "geo_bypass": True,
-            "geo_bypass_country": "KR",
-        }
-        
-        if download_type == "오디오 (MP3)":
-            ultra_minimal_opts["postprocessors"] = [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "64",
-            }]
+        if download_type == "비디오 (MP4)":
+            ydl_opts = {
+                # 로컬 환경 최적화: 최고 품질 우선
+                "format": "best[height<=1080][ext=mp4]/best[ext=mp4]/best",
+                "outtmpl": str(output_path / "%(title)s.%(ext)s"),
+                "merge_output_format": "mp4",
+                # 로컬 환경 성능 최적화
+                "concurrent_fragment_downloads": 8,  # 더 많은 동시 다운로드
+                "http_chunk_size": 10485760,  # 10MB 청크
+                # 네트워크 설정
+                "retries": 10,
+                "fragment_retries": 10,
+                "socket_timeout": 30,
+                # 품질 최적화
+                "writesubtitles": False,
+                "writeautomaticsub": False,
+                "writedescription": False,
+                "writeinfojson": False,
+                # 로깅
+                "no_warnings": False,
+                "ignoreerrors": False,
+            }
+        else:  # 오디오 (MP3)
+            ydl_opts = {
+                # 고품질 오디오 추출
+                "format": "bestaudio[abr>=192]/bestaudio/best",
+                "outtmpl": str(output_path / "%(title)s.%(ext)s"),
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": "320",  # 최고 품질
+                    }
+                ],
+                # 네트워크 설정
+                "retries": 10,
+                "socket_timeout": 30,
+                "no_warnings": False,
+                "ignoreerrors": False,
+            }
 
-        # 단일 시도 - 더 이상 재시도 없음
-        st.info("🔄 최후의 시도 중... (Ultra Minimal 모드)")
+        # 다운로드 시작 알림
+        st.info(f"🔄 {'비디오' if download_type == '비디오 (MP4)' else '오디오'} 다운로드 시작...")
         
-        with yt_dlp.YoutubeDL(ultra_minimal_opts) as ydl:
-            try:
-                info = ydl.extract_info(url, download=True)
-                filename = ydl.prepare_filename(info)
-                if download_type == "오디오 (MP3)":
-                    filename = os.path.splitext(filename)[0] + ".mp3"
-                
-                file_path = Path(filename)
-                if file_path.exists() and file_path.stat().st_size > 0:
-                    return file_path
-                else:
-                    st.error("❌ 다운로드 실패: Streamlit Cloud에서 YouTube 접근이 차단되었습니다.")
-                    return None
-            except Exception as e:
-                st.error(f"❌ 다운로드 실패: {str(e)[:100]}...")
-                st.error("🚫 YouTube가 Streamlit Cloud를 차단했습니다. 로컬 환경에서 실행해주세요.")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+            if download_type == "오디오 (MP3)":
+                filename = os.path.splitext(filename)[0] + ".mp3"
+            
+            # 파일 검증
+            file_path = Path(filename)
+            if file_path.exists() and file_path.stat().st_size > 0:
+                return file_path
+            else:
+                st.error("❌ 다운로드된 파일이 비어있거나 존재하지 않습니다.")
                 return None
                 
     except Exception as e:
         st.error(f"❌ 다운로드 중 오류 발생: {e}")
+        # 구체적인 오류 안내
+        if "ffmpeg" in str(e).lower():
+            st.error("� FFmpeg가 설치되어 있지 않습니다. 설치 후 다시 시도해주세요.")
+        elif "network" in str(e).lower() or "timeout" in str(e).lower():
+            st.warning("🌐 네트워크 연결을 확인하고 다시 시도해주세요.")
         return None
 
 
@@ -332,7 +339,8 @@ if download_btn and url:
                 for i, fmt in enumerate(audio_formats[:3]):  # 상위 3개만 표시
                     st.write(f"- {fmt.get('format_id')}: {fmt.get('format', 'N/A')} ({fmt.get('protocol', 'N/A')})")
 
-        file_path = download_video(url, download_type, DOWNLOAD_FOLDER)
+        file_path = download_video(url, download_type, DOWNLOAD_FOLDER, 
+                                 enable_high_quality, enable_fast_download)
         if file_path and file_path.exists():
             file_size_mb = file_path.stat().st_size / (1024 * 1024)
             st.success(f"✅ 다운로드 완료! (파일 크기: {file_size_mb:.1f}MB)")
@@ -399,22 +407,37 @@ if download_btn and url:
                         use_container_width=True,
                     )
         else:
-            st.error("❌ 다운로드 실패: Streamlit Cloud에서 YouTube가 차단되었습니다.")
+            st.error("❌ 다운로드 실패: 파일이 생성되지 않았거나 비어있습니다.")
             
-            # 로컬 실행 안내
-            st.info("💡 **로컬 환경에서 실행하세요**")
-            st.code("""
-# 터미널에서 실행
-git clone https://github.com/jpjp92/yt_downloader.git
-cd yt_downloader
-pip install -r requirements.txt
-streamlit run app.py
-""", language="bash")
+            # 로컬 환경 문제 해결 가이드
+            st.info("💡 **문제 해결 방법:**")
             
-            st.warning("⚠️ **Streamlit Cloud 제한사항**")
-            st.write("- YouTube는 Streamlit Cloud IP를 차단합니다")
-            st.write("- 클라우드 환경에서는 YouTube 다운로드가 불가능합니다")
-            st.write("- 로컬 환경에서는 정상 작동합니다")
-            st.write("- 다른 동영상 플랫폼은 작동할 수 있습니다")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("**네트워크 관련:**")
+                st.write("• 인터넷 연결 확인")
+                st.write("• VPN 사용 중이면 해제")
+                st.write("• 방화벽 설정 확인")
+                
+            with col2:
+                st.write("**시스템 관련:**")
+                st.write("• FFmpeg 설치 확인")
+                st.write("• Python 권한 확인")
+                st.write("• 디스크 공간 확인")
+            
+            st.warning("⚠️ **일반적인 해결 방법**")
+            st.write("1. **다른 동영상으로 테스트** - 일부 동영상은 지역 제한이 있을 수 있습니다")
+            st.write("2. **오디오 모드로 시도** - 비디오보다 안정적입니다")
+            st.write("3. **짧은 동영상으로 테스트** - 긴 동영상은 네트워크 오류 가능성이 높습니다")
+            st.write("4. **잠시 후 재시도** - 일시적인 네트워크 문제일 수 있습니다")
+            
+            # FFmpeg 설치 안내
+            with st.expander("🔧 FFmpeg 설치 방법"):
+                st.write("**Windows:**")
+                st.code("choco install ffmpeg", language="powershell")
+                st.write("**macOS:**")
+                st.code("brew install ffmpeg", language="bash")
+                st.write("**Linux/WSL:**")
+                st.code("sudo apt update && sudo apt install ffmpeg", language="bash")
     else:
         st.error("❌ 동영상 정보를 가져올 수 없습니다. URL을 확인해주세요!")

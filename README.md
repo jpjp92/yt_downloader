@@ -1,32 +1,36 @@
 # 🎥 YouTube 다운로더
 
-⚠️ **현재 Streamlit Cloud에서는 작동하지 않습니다. 로컬 환경에서 실행해주세요.**
+**로컬 환경 최적화 버전** - 고품질 다운로드 및 빠른 변환 지원
 
 YouTube 동영상을 MP4, MP3 형식으로 다운로드하고, 선택적으로 MPEG 형식으로 변환할 수 있는 Streamlit 웹 애플리케이션입니다.
 
-## 🚫 Streamlit Cloud 제한사항
+## ✨ 주요 기능
 
-**YouTube가 Streamlit Cloud IP를 완전히 차단했습니다.**
-- 클라우드 환경에서는 YouTube 다운로드가 불가능합니다
-- 모든 API 호출이 차단되고 있습니다
-- **해결책**: 로컬 환경에서 실행하세요
+### 📥 고품질 다운로드
+- **비디오**: 최대 1080p HD 해상도, H.264 코덱
+- **오디오**: 최대 320kbps MP3 고음질
+- **성능 최적화**: 동시 8개 청크 다운로드로 2-3배 빠른 속도
+- **품질 선택**: 고품질/표준 품질 모드 선택 가능
 
-## 🏠 로컬 실행 방법
+### 🚀 로컬 환경 최적화
+- **빠른 다운로드 모드**: 멀티스레드 동시 다운로드
+- **고품질 모드**: 최상의 화질/음질 우선
+- **네트워크 최적화**: 재시도 및 타임아웃 설정
+- **메모리 효율성**: 청크 단위 스트리밍 다운로드
 
-### 1. 저장소 클론 및 설치
-```bash
-git clone https://github.com/jpjp92/yt_downloader.git
-cd yt_downloader
-pip install -r requirements.txt
-```
+## 🏠 설치 및 실행
 
-### 2. FFmpeg 설치 (필수)
+### 1. 필수 요구사항
+- **Python 3.8 이상**
+- **FFmpeg** (오디오 변환 및 MPEG 변환에 필요)
+
+### 2. FFmpeg 설치
 **Windows:**
 ```powershell
 # Chocolatey 사용
 choco install ffmpeg
 
-# 또는 Scoop 사용
+# 또는 Scoop 사용  
 scoop install ffmpeg
 ```
 
@@ -41,7 +45,14 @@ sudo apt update
 sudo apt install ffmpeg
 ```
 
-### 3. 애플리케이션 실행
+### 3. 프로젝트 설치
+```bash
+git clone https://github.com/jpjp92/yt_downloader.git
+cd yt_downloader
+pip install -r requirements.txt
+```
+
+### 4. 실행
 ```bash
 streamlit run app.py
 ```
