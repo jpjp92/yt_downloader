@@ -142,6 +142,10 @@ python -m streamlit run app.py --server.port 8501
 
 **Windows 사용자:**
 ```powershell
+# 방법 1: 자동 실행 배치 파일 (가장 쉬움)
+run_windows.bat
+
+# 방법 2: 수동 실행
 # 1. 저장소 이동
 cd yt_downloader
 
@@ -153,6 +157,10 @@ python -m streamlit run app.py
 
 **WSL/Linux 사용자:**
 ```bash
+# 방법 1: 자동 실행 스크립트
+./run.sh
+
+# 방법 2: 수동 실행
 # 1. 저장소 이동
 cd yt_downloader
 

@@ -17,14 +17,17 @@ jobs:
             name: Windows
             extension: .exe
             build_cmd: pyinstaller --onefile --windowed --name YouTube_Downloader main.py
+            list_cmd: dir dist\
           - os: ubuntu-latest
             name: Linux
             extension: ""
             build_cmd: pyinstaller --onefile --console --name YouTube_Downloader main.py
+            list_cmd: ls -la dist/
           - os: macos-latest
             name: macOS
             extension: ""
             build_cmd: pyinstaller --onefile --windowed --name YouTube_Downloader main.py
+            list_cmd: ls -la dist/
 
     runs-on: ${{ matrix.os }}
     
@@ -40,7 +43,8 @@ jobs:
     - name: 📦 Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller streamlit yt-dlp ffmpeg-python
+        pip install pyinstaller streamlit yt-dlp
+        pip install ffmpeg-python || echo "FFmpeg-python installation failed, continuing..."
 
     - name: 🏗️ Build Executable
       run: ${{ matrix.build_cmd }}
@@ -48,14 +52,13 @@ jobs:
     - name: 📁 List Build Files (Debug)
       run: |
         echo "=== dist/ contents ==="
-        ls -la dist/ || dir dist\
+        ${{ matrix.list_cmd }}
 
     - name: 🎯 Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: YouTube_Downloader-${{ matrix.name }}
-        path: |
-          dist/YouTube_Downloader${{ matrix.extension }}
+        path: dist/
         retention-days: 30
 
   release:
