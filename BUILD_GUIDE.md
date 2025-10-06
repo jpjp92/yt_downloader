@@ -239,7 +239,110 @@ pyinstaller --exclude-module=matplotlib --exclude-module=numpy main.py
 pyinstaller --debug=all main.py
 ```
 
-## 📖 추가 리소스
+## � Linux 환경에서 실행 파일 만들기
+
+### ❌ Linux에서 .exe 파일은 직접 만들 수 없습니다!
+
+**하지만 다음과 같은 대안들이 있습니다:**
+
+### 1. **Native Linux 실행 파일 생성 (권장)**
+
+```bash
+# Linux/WSL에서
+pyinstaller --onefile --console --name YouTube_Downloader main.py
+
+# 결과: dist/YouTube_Downloader (리눅스 실행 파일)
+# 실행: ./dist/YouTube_Downloader
+```
+
+**장점:**
+- ✅ 빠른 빌드 (5-10분)
+- ✅ 작은 파일 크기 (~24MB)
+- ✅ Linux/WSL에서 바로 실행 가능
+
+### 2. **Wine을 사용한 Windows .exe 빌드**
+
+```bash
+# Wine 설치 (Ubuntu/Debian)
+sudo apt update
+sudo apt install wine winetricks
+
+# Windows Python 설치 (Wine 환경)
+winetricks python3
+
+# PyInstaller 설치 및 빌드
+wine pip install pyinstaller
+wine pyinstaller --onefile --windowed --name YouTube_Downloader.exe main.py
+```
+
+**주의:** 복잡하고 불안정할 수 있음
+
+### 3. **Docker를 사용한 크로스 컴파일**
+
+```bash
+# Windows 컨테이너 사용
+docker run --rm -v $(pwd):/app -w /app \
+  python:3.11-windowsservercore \
+  powershell -c "pip install pyinstaller streamlit yt-dlp; pyinstaller --onefile main.py"
+```
+
+### 4. **GitHub Actions로 자동 빌드**
+
+`.github/workflows/build.yml` 파일 생성:
+
+```yaml
+name: Build Executables
+on: [push]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: pip install -r requirements-dev.txt
+    - run: pyinstaller --onefile --name YouTube_Downloader main.py
+    - uses: actions/upload-artifact@v3
+      with:
+        name: YouTube_Downloader-${{ matrix.os }}
+        path: dist/
+```
+
+### 🎯 **권장 방법별 용도**
+
+| 방법 | 용도 | 난이도 | 결과 |
+|------|------|--------|------|
+| **Native Linux** | WSL, Ubuntu 사용자 | ⭐ 쉬움 | 24MB Linux 실행 파일 |
+| **GitHub Actions** | 배포용 자동화 | ⭐⭐ 보통 | 모든 OS용 파일 |
+| **Wine** | Windows .exe 필요시 | ⭐⭐⭐ 어려움 | .exe (불안정) |
+| **가상 머신** | 확실한 .exe 필요시 | ⭐⭐⭐⭐ 매우 어려움 | 완벽한 .exe |
+
+### ✅ **현재 생성된 파일**
+
+```bash
+# 생성된 Linux 실행 파일
+dist/YouTube_Downloader    # 24MB ELF 64-bit 실행 파일
+
+# 실행 방법
+./dist/YouTube_Downloader
+
+# 또는 다른 Linux 시스템에 복사하여 실행
+chmod +x YouTube_Downloader
+./YouTube_Downloader
+```
+
+```bash
+# VirtualBox + Windows 10/11
+# 1. Windows VM 생성
+# 2. Python 설치
+# 3. 프로젝트 복사
+# 4. PyInstaller 빌드
+pyinstaller --onefile --windowed --name YouTube_Downloader main.py
+```
 
 - [PyInstaller 공식 문서](https://pyinstaller.readthedocs.io/)
 - [auto-py-to-exe 가이드](https://github.com/brentvollebregt/auto-py-to-exe)
