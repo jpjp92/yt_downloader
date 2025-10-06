@@ -94,7 +94,13 @@ with st.form("download_form"):
 # --- 다운로드 및 변환 함수 정의 ---
 def get_video_info(url: str):
     """동영상 정보 가져오기"""
-    ydl_opts = {"quiet": True, "no_warnings": True}
+    ydl_opts = {
+        "quiet": True, 
+        "no_warnings": True,
+        # 네트워크 안정성
+        "socket_timeout": 30,
+        "retries": 3,
+    }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -108,32 +114,43 @@ def download_video(url: str, download_type: str, output_path: Path) -> Path | No
     try:
         if download_type == "비디오 (MP4)":
             ydl_opts = {
-                # Streamlit Cloud용 최적화: 병합이 필요없는 단일 포맷 선택
-                "format": "best[ext=mp4][height<=1080]/best[ext=mp4]/best",
+                # 더 안정적인 포맷 선택 - Progressive 포맷 우선
+                "format": "best[ext=mp4][protocol^=http]/best[ext=mp4]/mp4/best",
                 "outtmpl": str(output_path / "%(title)s.%(ext)s"),
-                # ffmpeg 병합 비활성화
-                "merge_output_format": None,
+                # 네트워크 안정성 개선
+                "retries": 10,
+                "fragment_retries": 10,
+                "socket_timeout": 30,
+                # HLS 관련 옵션 추가
+                "hls_prefer_native": False,  # native HLS 다운로더 비활성화
+                "external_downloader": None,  # 외부 다운로더 사용 안함
                 # 다운로드 속도 개선 옵션
-                "concurrent_fragment_downloads": 5,
-                "http_chunk_size": 10485760,
-                # 오류 시 중단하지 않고 계속 진행
-                "ignoreerrors": True,
-                "no_warnings": True,
+                "concurrent_fragment_downloads": 1,  # 동시 다운로드를 1로 줄임 (안정성)
+                "http_chunk_size": 1048576,  # 1MB 청크로 줄임
+                # 오류 처리
+                "ignoreerrors": False,  # 오류 무시하지 않음
+                "no_warnings": False,
+                # 추가 안정성 옵션
+                "sleep_interval": 1,
+                "max_sleep_interval": 5,
             }
         else:  # 오디오 (MP3)
             ydl_opts = {
-                # 오디오만 추출 - 이미 오디오 전용 포맷 선택
-                "format": "bestaudio[ext=m4a]/bestaudio",
+                # 오디오 전용 - 더 안정적인 포맷
+                "format": "bestaudio[ext=m4a]/bestaudio/best",
                 "outtmpl": str(output_path / "%(title)s.%(ext)s"),
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "mp3",
-                        "preferredquality": "192",  # 320에서 192로 낮춤 (안정성)
+                        "preferredquality": "192",
                     }
                 ],
-                "ignoreerrors": True,
-                "no_warnings": True,
+                # 네트워크 안정성
+                "retries": 10,
+                "socket_timeout": 30,
+                "ignoreerrors": False,
+                "no_warnings": False,
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -141,7 +158,15 @@ def download_video(url: str, download_type: str, output_path: Path) -> Path | No
             filename = ydl.prepare_filename(info)
             if download_type == "오디오 (MP3)":
                 filename = os.path.splitext(filename)[0] + ".mp3"
-            return Path(filename)
+            
+            # 파일이 실제로 다운로드되었고 비어있지 않은지 확인
+            file_path = Path(filename)
+            if file_path.exists() and file_path.stat().st_size > 0:
+                return file_path
+            else:
+                st.error("❌ 다운로드된 파일이 비어있거나 존재하지 않습니다.")
+                return None
+                
     except Exception as e:
         st.error(f"❌ 다운로드 중 오류 발생: {e}")
         return None
@@ -265,14 +290,31 @@ def convert_mp4_to_mpeg(input_path: Path, output_path: Path, quality: str, reduc
 # --- 실행부 ---
 if download_btn and url:
     st.info("📥 다운로드를 시작합니다... 잠시만 기다려주세요.")
+    
+    # 동영상 정보 가져오기
     info = get_video_info(url)
     if info:
         st.write(f"**제목:** {info.get('title')}")
         st.write(f"**채널:** {info.get('uploader')}")
+        
+        # 사용 가능한 포맷 표시 (디버깅용)
+        with st.expander("🔍 사용 가능한 포맷 정보 (디버깅)"):
+            formats = info.get('formats', [])
+            if formats:
+                st.write("**비디오 포맷:**")
+                video_formats = [f for f in formats if f.get('vcodec', 'none') != 'none' and f.get('ext') == 'mp4']
+                for i, fmt in enumerate(video_formats[:5]):  # 상위 5개만 표시
+                    st.write(f"- {fmt.get('format_id')}: {fmt.get('format', 'N/A')} ({fmt.get('protocol', 'N/A')})")
+                
+                st.write("**오디오 포맷:**")
+                audio_formats = [f for f in formats if f.get('acodec', 'none') != 'none']
+                for i, fmt in enumerate(audio_formats[:3]):  # 상위 3개만 표시
+                    st.write(f"- {fmt.get('format_id')}: {fmt.get('format', 'N/A')} ({fmt.get('protocol', 'N/A')})")
 
         file_path = download_video(url, download_type, DOWNLOAD_FOLDER)
         if file_path and file_path.exists():
-            st.success("✅ 다운로드 완료!")
+            file_size_mb = file_path.stat().st_size / (1024 * 1024)
+            st.success(f"✅ 다운로드 완료! (파일 크기: {file_size_mb:.1f}MB)")
             st.write(f"저장 위치: `{file_path}`")
 
             mpeg_path = None
@@ -335,5 +377,11 @@ if download_btn and url:
                         mime="video/mpeg",
                         use_container_width=True,
                     )
+        else:
+            st.error("❌ 다운로드 실패: 파일이 생성되지 않았거나 비어있습니다.")
+            st.info("💡 **해결 방법:**")
+            st.write("1. 다른 YouTube URL로 시도해보세요")
+            st.write("2. 잠시 후 다시 시도해보세요")
+            st.write("3. 오디오 모드로 시도해보세요")
     else:
         st.error("❌ 동영상 정보를 가져올 수 없습니다. URL을 확인해주세요!")
