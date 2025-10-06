@@ -335,6 +335,54 @@ chmod +x YouTube_Downloader
 ./YouTube_Downloader
 ```
 
+## 🎯 Windows .exe 파일 생성 구성
+
+### 방법 1: **GitHub Actions 자동 빌드** (가장 쉬움)
+
+**설정 완료!** `.github/workflows/build-executables.yml` 파일이 생성되었습니다.
+
+```bash
+# 1. GitHub에 푸시
+git add .
+git commit -m "Add automated build workflow"
+git push
+
+# 2. GitHub Actions에서 자동으로 다음 파일들 생성:
+# - YouTube_Downloader_Windows.exe (Windows)
+# - YouTube_Downloader_Linux (Linux)  
+# - YouTube_Downloader_macOS (macOS)
+```
+
+**사용법:**
+1. 코드를 GitHub에 푸시하면 자동으로 빌드
+2. Actions 탭에서 빌드 진행상황 확인
+3. Artifacts에서 각 OS별 실행 파일 다운로드
+
+### 방법 2: **Docker로 Windows 빌드**
+
+```bash
+# Docker로 Windows EXE 빌드 (설정 완료!)
+./build-windows-exe.sh
+
+# 또는 수동으로:
+docker build -f Dockerfile.windows -t yt-downloader-windows .
+docker run --rm -v "$(pwd)/dist:/app/dist" yt-downloader-windows
+```
+
+### 방법 3: **Windows 환경에서 직접 빌드**
+
+**Windows PowerShell에서:**
+```powershell
+# 1. 저장소 클론 (Windows에서)
+git clone https://github.com/jpjp92/yt_downloader.git
+cd yt_downloader
+
+# 2. 자동 빌드
+.\build_exe.bat
+
+# 결과: dist\YouTube_Downloader.exe
+```
+
 ```bash
 # VirtualBox + Windows 10/11
 # 1. Windows VM 생성

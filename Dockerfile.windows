@@ -1,0 +1,21 @@
+# Windows 빌드용 Dockerfile
+FROM python:3.11-windowsservercore
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 프로젝트 파일 복사
+COPY requirements-dev.txt .
+COPY main.py .
+COPY app.py .
+
+# 의존성 설치
+RUN pip install --no-cache-dir -r requirements-dev.txt
+
+# PyInstaller로 EXE 빌드
+RUN pyinstaller --onefile --windowed --name YouTube_Downloader main.py
+
+# 빌드된 파일을 호스트로 복사할 수 있도록 볼륨 마운트
+VOLUME ["/app/dist"]
+
+CMD ["powershell", "-c", "echo 'EXE 빌드 완료! dist/YouTube_Downloader.exe 파일을 확인하세요.'"]
