@@ -108,26 +108,32 @@ def download_video(url: str, download_type: str, output_path: Path) -> Path | No
     try:
         if download_type == "비디오 (MP4)":
             ydl_opts = {
-                # 최적화된 포맷 선택: h264 코덱 우선, 최대 1080p, 빠른 다운로드
-                "format": "bestvideo[ext=mp4][height<=1080][vcodec^=avc1]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                # Streamlit Cloud용 최적화: 병합이 필요없는 단일 포맷 선택
+                "format": "best[ext=mp4][height<=1080]/best[ext=mp4]/best",
                 "outtmpl": str(output_path / "%(title)s.%(ext)s"),
-                "merge_output_format": "mp4",
+                # ffmpeg 병합 비활성화
+                "merge_output_format": None,
                 # 다운로드 속도 개선 옵션
-                "concurrent_fragment_downloads": 5,  # 동시 다운로드 청크 수
-                "http_chunk_size": 10485760,  # 10MB 청크 크기
+                "concurrent_fragment_downloads": 5,
+                "http_chunk_size": 10485760,
+                # 오류 시 중단하지 않고 계속 진행
+                "ignoreerrors": True,
+                "no_warnings": True,
             }
         else:  # 오디오 (MP3)
             ydl_opts = {
-                # 오디오 품질 개선: 최대 320kbps까지 허용
-                "format": "bestaudio[ext=m4a]/bestaudio/best",
+                # 오디오만 추출 - 이미 오디오 전용 포맷 선택
+                "format": "bestaudio[ext=m4a]/bestaudio",
                 "outtmpl": str(output_path / "%(title)s.%(ext)s"),
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
                         "preferredcodec": "mp3",
-                        "preferredquality": "320",  # 192 -> 320kbps로 개선
+                        "preferredquality": "192",  # 320에서 192로 낮춤 (안정성)
                     }
                 ],
+                "ignoreerrors": True,
+                "no_warnings": True,
             }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
