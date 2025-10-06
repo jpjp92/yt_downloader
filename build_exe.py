@@ -34,24 +34,22 @@ def build_exe():
     print("🗂️ 빌드 디렉토리 정리 완료")
     
     # PyInstaller 명령어 구성
+    # OS에 따른 데이터 구분자 설정
+    separator = ":" if os.name != "nt" else ";"
+    
     cmd = [
         "pyinstaller",
         "--name", "YouTube_Downloader",
         "--onefile",  # 단일 exe 파일로 생성
-        "--windowed",  # 콘솔 창 숨기기 (Windows)
-        "--icon", "icon.ico",  # 아이콘 (있는 경우)
-        "--add-data", "requirements.txt;.",
+        "--console",  # 콘솔 창 표시 (Linux/macOS에서는 windowed 대신)
+        f"--add-data=requirements.txt{separator}.",
         "--hidden-import", "streamlit",
-        "--hidden-import", "yt_dlp",
+        "--hidden-import", "yt_dlp", 
         "--hidden-import", "ffmpeg",
         "--collect-all", "streamlit",
         "--collect-all", "yt_dlp",
         "main.py"
     ]
-    
-    # 아이콘 파일이 없으면 해당 옵션 제거
-    if not Path("icon.ico").exists():
-        cmd = [item for item in cmd if item != "--icon" and item != "icon.ico"]
     
     print("🔨 PyInstaller 실행 중...")
     print(f"명령어: {' '.join(cmd)}")
@@ -62,7 +60,8 @@ def build_exe():
         print(f"📁 출력 위치: {Path('dist').absolute()}")
         
         # 결과 파일 확인
-        exe_path = Path("dist") / "YouTube_Downloader.exe"
+        exe_name = "YouTube_Downloader.exe" if os.name == "nt" else "YouTube_Downloader"
+        exe_path = Path("dist") / exe_name
         if exe_path.exists():
             size_mb = exe_path.stat().st_size / (1024 * 1024)
             print(f"📊 파일 크기: {size_mb:.1f}MB")
