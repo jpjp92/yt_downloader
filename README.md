@@ -59,6 +59,25 @@ streamlit run app.py
 
 브라우저에서 `http://localhost:8501`로 접속하세요.
 
+## 📦 EXE 파일로 변환
+
+### 간편 설치 및 빌드
+```bash
+# Windows 사용자
+build_exe.bat
+
+# Linux/macOS 사용자  
+python build_exe.py
+```
+
+### 수동 빌드
+```bash
+pip install pyinstaller
+pyinstaller --onefile --name "YouTube_Downloader" main.py
+```
+
+자세한 내용은 [BUILD_GUIDE.md](BUILD_GUIDE.md)를 참고하세요.
+
 ## ✨ 주요 기능
 
 ### 📥 다운로드

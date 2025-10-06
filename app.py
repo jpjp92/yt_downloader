@@ -86,7 +86,7 @@ with st.sidebar:
         )
 
         reduce_resolution = st.checkbox(
-            "해상도 줄이기 (720p로)",
+            "해상도 줄이기 (720p)",
             value=False,
             help="파일 크기를 크게 줄일 수 있습니다. (1080p → 720p)",
         )

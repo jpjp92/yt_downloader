@@ -20,6 +20,12 @@ wheels/
 .installed.cfg
 *.egg
 
+# PyInstaller 빌드 파일
+build/
+dist/
+*.spec
+main.py
+
 # 다운로드 폴더 (파일 크기가 클 수 있음)
 downloads/
 *.mp4

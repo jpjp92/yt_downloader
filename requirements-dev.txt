@@ -1,0 +1,12 @@
+# 기본 실행용 패키지
+streamlit>=1.28.0
+yt-dlp>=2023.10.13
+ffmpeg-python>=0.2.0
+
+# EXE 빌드용 패키지
+pyinstaller>=5.13.0
+pyinstaller-hooks-contrib>=2023.0
+
+# 개발 및 최적화
+upx-ucl>=4.0.0  # 실행 파일 압축 (선택사항)
+auto-py-to-exe>=2.4.0  # GUI 빌드 도구 (선택사항)
