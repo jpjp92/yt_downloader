@@ -85,12 +85,84 @@ yt_downloader/
 
 ## ⚡ 실행 파일 사용법
 
-### 1. 실행 파일 실행
-- `dist/YouTube_Downloader.exe` 더블클릭
-- 자동으로 웹 브라우저가 열림
-- Streamlit 앱이 실행됨
+### 방법 1: Windows에서 빌드 및 실행 (권장)
 
-### 2. 배포 준비
+**1. Windows PowerShell 또는 명령 프롬프트에서:**
+```powershell
+# 1. 저장소 클론
+git clone https://github.com/jpjp92/yt_downloader.git
+cd yt_downloader
+
+# 2. Python 패키지 설치
+pip install pyinstaller streamlit yt-dlp ffmpeg-python
+
+# 3. 빌드 실행
+pyinstaller --onefile --windowed --name YouTube_Downloader main.py
+
+# 4. 실행
+.\dist\YouTube_Downloader.exe
+```
+
+### 방법 2: 직접 Python 실행 (개발/테스트용)
+
+**빌드하지 않고 바로 실행:**
+```bash
+# 1. 의존성 설치
+pip install streamlit yt-dlp ffmpeg-python
+
+# 2. Streamlit 직접 실행
+streamlit run app.py
+
+# 3. 브라우저에서 http://localhost:8501 접속
+```
+
+### 방법 3: Linux/macOS에서 실행
+
+**1. 실행 파일 빌드:**
+```bash
+# PyInstaller로 빌드
+pyinstaller --onefile --console --name YouTube_Downloader main.py
+
+# 실행 권한 부여
+chmod +x dist/YouTube_Downloader
+
+# 실행
+./dist/YouTube_Downloader
+```
+
+**2. 직접 Python 실행:**
+```bash
+# Streamlit 실행
+python -m streamlit run app.py --server.port 8501
+```
+
+### 🎯 실제 권장 실행 방법
+
+**현재 상황에서 가장 쉬운 방법:**
+
+**Windows 사용자:**
+```powershell
+# 1. 저장소 이동
+cd yt_downloader
+
+# 2. 직접 실행 (빌드 없이)
+python -m streamlit run app.py
+
+# 3. 자동으로 브라우저가 열림 (http://localhost:8501)
+```
+
+**WSL/Linux 사용자:**
+```bash
+# 1. 저장소 이동
+cd yt_downloader
+
+# 2. 직접 실행
+streamlit run app.py
+
+# 3. 브라우저에서 http://localhost:8501 접속
+```
+
+**💡 참고:** EXE 빌드는 배포용이며, 개발/개인 사용시에는 직접 Python 실행이 더 안정적입니다.
 ```bash
 # 필요한 파일들만 복사
 mkdir YouTube_Downloader_Portable
