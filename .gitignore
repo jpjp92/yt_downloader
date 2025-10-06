@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 다운로드 폴더 (파일 크기가 클 수 있음)
+downloads/
+*.mp4
+*.mp3
+*.mpg
+*.mpeg
+
+# 로그 파일
+logs/
+*.log
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# 환경 변수
+.env
+.env.local
+
+# 임시 파일
+*.tmp
+*.temp
